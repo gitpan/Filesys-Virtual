@@ -1,5 +1,9 @@
 Revision history for Perl extension Filesys::Virtual.
 
+0.05 Fri Jan 21 21:13:00 2005
+	- seperated Filesys::Virtual::Plain from Filesys::Virtual
+	- added utime
+
 0.04 Sun Apr 18 17:25:36 2004
 	- fixed problem with some dirs not shown as dirs in list
 	- added file_path key in obj hashref so it has the last file opened

@@ -11,16 +11,16 @@ package Filesys::Virtual;
 ### This module is free software; you can redistribute it and/or
 ### modify it under the same terms as Perl itself.
 ###
-### Changes Copyright (c) 2003-2004 David Davis and Teknikill Software
+### Changes Copyright (c) 2003-2005 David Davis and Teknikill Software
 ###########################################################################
 
 use strict;
 use Carp;
 use IO::File;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
-# login: 
+# login: exactly that
 
 sub login {
 	my ($self, $username, $password) = @_;
@@ -184,13 +184,10 @@ sub test {
 	return undef;
 }
 
-
-### TODO: Flags for append vs create
-
 # open_read
 
 sub open_read {
-	my ($self, $fin) = @_;
+	my ($self, $fin, $create) = @_;
 
 	carp ref($self)."::open_read() Unimplemented";
 	
@@ -210,7 +207,7 @@ sub close_read {
 # open_write
 
 sub open_write {
-	my ($self, $fin) = @_;
+	my ($self, $fin, $append) = @_;
 
 	carp ref($self)."::open_write() Unimplemented";
 	
@@ -227,6 +224,29 @@ sub close_write {
 	return undef;
 }
 
+# seek: seek, if supported by filesystem...
+# ie $fh is a filehandle
+# $fh->seek($first, $second);
+# see the module Filehandle
+
+sub seek {
+	my ($self, $fh, $first, $second) = @_;
+
+	carp ref($self)."::seek() Unimplemented";
+
+	return undef;
+}
+
+# utime: modify access time and mod time
+
+sub utime {
+	my ($self, $atime, $mtime, @fn) = @_;
+
+	carp ref($self)."::utime() Unimplemented";
+
+	return undef;
+}
+
 1;
 
 __END__
@@ -237,24 +257,31 @@ Filesys::Virtual - Perl extension to provide a framework for a virtual filesyste
 
 =head1 SYNOPSIS
 
-  use Filesys::Virtual;  
+  use Filesys::Virtual;
 
 =head1 DESCRIPTION
 
-Currently this module only exists to complement POE::Component::Server::FTP
+This is a base class.  See L<SEE ALSO> below.
 
 =head2 EXPORT
 
 None by default.
 
+=head2 TODO
+
+Please contact David if you have any suggestions.
+
 =head1 AUTHORS
 
-L.M.Orchard, deus_x@pobox.com
+David Davis, E<lt>xantus@cpan.orgE<gt>, http://teknikill.net/
 
-David Davis, xantus@cpan.org
+L.M.Orchard, E<lt>deus_x@pobox.comE<gt>
 
 =head1 SEE ALSO
 
-perl(1), POE::Component::Server::FTP
+perl(1), L<Filesys::Virtual>, L<Filesys::Virtual::SSH>,
+L<Filesys::Virtual::DAAP>, L<POE::Component::Server::FTP>,
+L<Net::DAV::Server>, L<HTTP::Daemon>,
+http://perladvent.org/2004/20th/
 
 =cut
