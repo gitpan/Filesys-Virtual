@@ -5,7 +5,6 @@ package Filesys::Virtual::Plain;
 ### L.M.Orchard (deus_x@pobox_com)
 ### David Davis (xantus@cpan.org)
 ###
-### Filesystem access for FTPd
 ###
 ### Copyright (c) 1999 Leslie Michael Orchard.  All Rights Reserved.
 ### This module is free software; you can redistribute it and/or
@@ -22,7 +21,7 @@ use User::grent;
 use IO::File;
 
 our $AUTOLOAD;
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our @ISA = qw(Filesys::Virtual);
 
 our %_fields = (
@@ -116,7 +115,7 @@ sub modtime {
 	
 	return (0,"");
 	my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
-		$atime,$mtime,$ctime,$blksize,$blocks) = stat($fn);
+		$atime,$mtime,$ctime,$blksize,$blocks) = CORE::stat($fn);
 		
 	my ($sec, $min, $hr, $dd, $mm, $yy, $wd, $yd, $isdst) =
 		localtime($mtime); $yy += 1900; $mm++;
@@ -130,7 +129,7 @@ sub size {
 	my ($self, $fn) = @_;
 	$fn = $self->_path_from_root($fn);
 
-	return (stat($fn))[7];
+	return (CORE::stat($fn))[7];
 }
 
 # Delete a given file
@@ -255,7 +254,7 @@ sub stat {
 	$fn =~ s/\s+/ /g;
 	$fn = $self->_path_from_root($fn);
 
-	return stat($fn);
+	return CORE::stat($fn);
 }
 
 # Perform a given filesystem test
@@ -308,7 +307,7 @@ sub test {
 sub open_read {
 	my ($self, $fin) = @_;
 	$fin =~ s/\s+/ /g;
-	$fin = $self->_path_from_root($fin);
+	$self->{file_path} = $fin = $self->_path_from_root($fin);
 
 	my $fh = new IO::File;
 		
@@ -328,8 +327,8 @@ sub close_read {
 sub open_write {
 	my ($self, $fin, $append) = @_;
 	$fin =~ s/\s+/ /g;
-	$fin = $self->_path_from_root($fin);
-
+	$self->{file_path} = $fin = $self->_path_from_root($fin);
+	
 	my $fh = new IO::File;
 	
 	if (defined ($append)) {
@@ -338,7 +337,7 @@ sub open_write {
 		$fh->open(">$fin") or return undef;
 	}
 
-	return $fh;		
+	return $fh;	
 }
 
 sub close_write {
@@ -349,43 +348,49 @@ sub close_write {
 	return 1;
 }
 
+sub seek {
+	my ($self, $fh, $first, $second) = @_;
+
+	return $fh->seek($first, $second);
+}
+		
+
 sub login {
-	my $self     = shift;
+	my $self = shift;
     my $username = shift;
     my $password = shift;
-		
+	my $become = shift;
+	my $pw;
 	if ($username eq "anonymous") {
 		### Anonymous login
-		my (@list, $id, $gid);
-		@list = getpwnam("ftp");
-		$id = $list[2];
-		$gid = $list[3];
-#		$> = $id;
-#		$) = $gid;
-		$self->{uid} = $id;
-		$self->{gid} = $gid;
-		
-		return 1;
+		$pw = getpwnam("ftp");
+		unless (defined $pw) {
+			return 0;
+		}
 	} else {
 		### Given username / password
-		my $pw = getpwnam($username);
+		$pw = getpwnam($username);
 		unless (defined $pw) {
 			return 0;
 		}
 		my $cpassword = $pw->passwd();
 		my $crpt = crypt($password, $cpassword);
-		if ($crpt eq $cpassword) {
-#			$> = $pw->uid();
-#			$) = $pw->gid();
-			$self->{uid} = $pw->uid();
-			$self->{gid} = $pw->gid();
-			$self->chdir($pw->dir());
-			$self->home_path($pw->dir());
-			return 1;
-		} else {
+		unless ($crpt eq $cpassword) {
 			return 0;
 		}
 	}
+	# don't use this yet..
+	if (defined $become) {
+		$< = $> = $pw->uid();
+		$( = $) = $pw->gid();
+	}
+	$self->{uid} = $pw->uid();
+	$self->{gid} = $pw->gid();
+	$self->{home} = $pw->dir();
+	$self->{gids}{$pw->gid()} = 1;
+	$self->chdir($pw->dir());
+	$self->home_path($pw->dir());
+	return 1;
 }
 
 # Restrict the path to beneath root path
@@ -441,19 +446,18 @@ sub _ls_stat {
 	# Determine the current year, for time comparisons
 	my $curr_year = (localtime())[5]+1900;
 
-	### Perform stat() on current file.
-	my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
-			$atime,$mtime,$ctime,$blksize,$blocks) = CORE::stat($full_fn);
+	# Perform stat() on current file.
+	my ($mode,$nlink,$uid,$gid,$size,$mtime) = (CORE::stat($full_fn))[2 .. 5,7,9];
+	#my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+	#		$atime,$mtime,$ctime,$blksize,$blocks) = CORE::stat($full_fn);
 	
-	### Format the mod datestamp into the ls format
-	my $lt = localtime($mtime);
-	my ($day, $mm, $dd, $time, $yr) =
-		( $lt =~ /(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/ );
+	# Format the mod datestamp into the ls format
+	my ($day, $mm, $dd, $time, $yr) = (localtime($mtime) =~ m/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/);
 	
-	### Get a string of 0's and 1's for the binary file mode/type
+	# Get a string of 0's and 1's for the binary file mode/type
 	my $bin_str  = substr(unpack("B32", pack("N", $mode)), -16);
 	
-	### Produce a permissions map from the file mode
+	# Produce a permissions map from the file mode
 	my $mode_bin = substr($bin_str, -9);
 	my $mode_str = '';
 	
@@ -461,13 +465,12 @@ sub _ls_stat {
 		$mode_str .= substr($modes[substr($mode_bin, $i, 1)], $i, 1);
 	}
 		
-	### Determine what type of file this is from the file type
+	# Determine what type of file this is from the file type
 	my $type_bin = substr($bin_str, -16, 7);
 	my $type_str = '-';
-	$type_str = 'd' if ($type_bin eq '0100000');
-	$type_str = '-' if ($type_bin eq '1000000');
+	$type_str = 'd' if ($type_bin =~ m/^01/);
 	
-	### Assemble and return the line
+	# Assemble and return the line
 	return sprintf("%1s%9s %4s %-8s %-8s %8s %3s %2s %5s %s",
 		 $type_str, $mode_str, $nlink,
 		 $self->_user($uid), $self->_group($gid), $size, $mm, $dd,
@@ -481,11 +484,15 @@ sub _ls_stat {
 	sub _user {
 		my ($self, $uid) = @_;
 		if (!exists($user{$uid})) {
-			my $obj = getpwuid($uid);
-			if ($obj) {
-				$user{$uid} = $obj->name;
+			if (defined($uid)) {
+				my $obj = getpwuid($uid);
+				if ($obj) {
+					$user{$uid} = $obj->name;
+				} else {
+					$user{$uid} = "#$uid";
+				}
 			} else {
-				$user{$uid} = "#$uid";
+				return '#?';
 			}
 		}
 		return $user{$uid};
@@ -499,11 +506,15 @@ sub _ls_stat {
 	sub _group {
 		my ($self, $gid) = @_;
 		if (!exists($group{$gid})) {
-			my $obj = getgrgid($gid);
-			if ($obj) {
-				$group{$gid} = $obj->name;
+			if (defined($gid)) {
+				my $obj = getgrgid($gid);
+				if ($obj) {
+					$group{$gid} = $obj->name;
+				} else {
+					$group{$gid} = "#$gid";
+				}
 			} else {
-				$group{$gid} = "#$gid";
+				return '#?';
 			}
 		}
 		return $group{$gid};
