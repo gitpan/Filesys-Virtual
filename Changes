@@ -1,0 +1,11 @@
+Revision history for Perl extension Filesys::Virtual.
+
+0.02  Thu Feb 5 22:48:14 2004
+	- cleaned it up
+	- full path changedir fixed
+	- gid and uid caching fixed
+
+0.01  Sun Dec 2 22:57:08 2001
+	- original version; created by h2xs 1.1.1.4 with options
+		-XA -n Filesys::Virtual
+
