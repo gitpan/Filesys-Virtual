@@ -2,8 +2,8 @@ package Filesys::Virtual::Plain;
 
 ###########################################################################
 ### Filesys::Virtual::Plain
-### L.M.Orchard (deus_x@ninjacode.com)
-### Modified by David Davis ( xantus@cpan.org )
+### L.M.Orchard (deus_x@pobox_com)
+### David Davis (xantus@cpan.org)
 ###
 ### Filesystem access for FTPd
 ###
@@ -11,7 +11,7 @@ package Filesys::Virtual::Plain;
 ### This module is free software; you can redistribute it and/or
 ### modify it under the same terms as Perl itself.
 ###
-### Changes Copyright (c) 2003 David Davis and Teknikill Software
+### Changes Copyright (c) 2003-2004 David Davis and Teknikill Software
 ###########################################################################
 
 use strict;
@@ -22,7 +22,7 @@ use User::grent;
 use IO::File;
 
 our $AUTOLOAD;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our @ISA = qw(Filesys::Virtual);
 
 our %_fields = (
@@ -124,6 +124,15 @@ sub modtime {
 	return (1,"$yy$mm$dd$hr$min$sec");
 }
 
+# Returns the size of a given file
+
+sub size {
+	my ($self, $fn) = @_;
+	$fn = $self->_path_from_root($fn);
+
+	return (stat($fn))[7];
+}
+
 # Delete a given file
 
 sub delete {
@@ -156,9 +165,8 @@ sub mkdir {
 	
 	if ($ret == 1) {
 		chown($self->{uid}, $self->{gid}, $dir);
-	} else {
-		return 0;
 	}
+	return $ret;
 }
 
 # Remove a directory or file
@@ -203,7 +211,6 @@ sub list {
 			}
 		}
 	}
-	
 	return @ls;
 }
 
@@ -353,8 +360,10 @@ sub login {
 		@list = getpwnam("ftp");
 		$id = $list[2];
 		$gid = $list[3];
-		$> = $id;
-		$) = $gid;
+#		$> = $id;
+#		$) = $gid;
+		$self->{uid} = $id;
+		$self->{gid} = $gid;
 		
 		return 1;
 	} else {
@@ -366,8 +375,8 @@ sub login {
 		my $cpassword = $pw->passwd();
 		my $crpt = crypt($password, $cpassword);
 		if ($crpt eq $cpassword) {
-			#$> = $pw->uid();
-			#$) = $pw->gid();
+#			$> = $pw->uid();
+#			$) = $pw->gid();
 			$self->{uid} = $pw->uid();
 			$self->{gid} = $pw->gid();
 			$self->chdir($pw->dir());

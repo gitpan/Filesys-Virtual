@@ -1,5 +1,8 @@
 Revision history for Perl extension Filesys::Virtual.
 
+0.03 Mon Feb 16 16:19:48 2004
+	- added size command
+
 0.02  Thu Feb 5 22:48:14 2004
 	- cleaned it up
 	- full path changedir fixed

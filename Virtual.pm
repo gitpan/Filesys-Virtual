@@ -3,7 +3,7 @@ package Filesys::Virtual;
 ###########################################################################
 ### Filesys::Virtual
 ### L.M.Orchard (deus_x@ninjacode.com)
-### $Id: Object.pm,v 1.58 1999/12/15 06:07:47 deus_x Exp $
+### David Davis (xantus@cpan.org)
 ###
 ### Object oriented interface to a filesystem datasource
 ###
@@ -11,21 +11,31 @@ package Filesys::Virtual;
 ### This module is free software; you can redistribute it and/or
 ### modify it under the same terms as Perl itself.
 ###
-### Changes Copyright (c) 2003 David Davis and Teknikill Software
+### Changes Copyright (c) 2003-2004 David Davis and Teknikill Software
 ###########################################################################
 
 use strict;
 use Carp;
 use IO::File;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
-# login:
+# login: 
 
 sub login {
 	my ($self, $username, $password) = @_;
 	
 	carp ref($self)."::login() Unimplemented";
+	
+	return 0;
+}
+
+# size: get a file's size
+
+sub size {
+	my ($self, $mode, $fn) = @_;
+	
+	carp ref($self)."::size() Unimplemented";
 	
 	return 0;
 }
@@ -240,6 +250,7 @@ None by default.
 =head1 AUTHORS
 
 L.M.Orchard, deus_x@pobox.com
+
 David Davis, xantus@cpan.org
 
 =head1 SEE ALSO
