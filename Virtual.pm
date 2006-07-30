@@ -18,7 +18,7 @@ use strict;
 use Carp;
 use IO::File;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 # login: exactly that
 
@@ -276,6 +276,11 @@ Please contact David if you have any suggestions.
 David Davis, E<lt>xantus@cpan.orgE<gt>, http://teknikill.net/
 
 L.M.Orchard, E<lt>deus_x@pobox.comE<gt>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 

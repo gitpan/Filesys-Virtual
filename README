@@ -19,6 +19,10 @@ AUTHORS
 
     L.M.Orchard, <deus_x@pobox.com>
 
+LICENSE
+    This library is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
 SEE ALSO
     perl(1), Filesys::Virtual, Filesys::Virtual::SSH,
     Filesys::Virtual::DAAP, POE::Component::Server::FTP, Net::DAV::Server,
